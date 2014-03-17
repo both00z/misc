@@ -2,12 +2,6 @@
  * Bot for http://gabrielecirulli.github.io/2048/
  */
 
-var appendScript = function () {
-	var s = document.createElement("script");
-	s.src = "//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js";
-	document.getElementsByTagName('head')[0].appendChild(s);
-}
-
 var getNextBoard = function (currentBoard, dir) {
 	var board = copyBoard(currentBoard);
 
@@ -185,15 +179,16 @@ var evaluateBoard = function (board) {
 
 var scrapeBoard = function (size) {
 	var board = getEmptyBoard(size);
+	var children = document.getElementsByClassName('tile-container')[0].children;
 	
-	$('.tile-container').children().each(function (i, e) {
-		var $e = $(e),
-			cls = $e.attr('class'),
+	for (var i = 0; i < children.length; i++) {
+		var el = children[i],
+			cls = el.className,
 			val = cls.match(/tile-(\d+)/)[1],
 			coords = cls.match(/tile-position-(\d+)-(\d+)/);
 			
 		board[Number(coords[1])-1][Number(coords[2])-1] = Number(val);
-	})
+	}
 	
 	return board;
 }
@@ -238,7 +233,7 @@ var getRandomBoards = function (board) {
 	return result;
 }
 
-var evaluateMove = function (board, current, maxLookAhead) {
+var evaluateMove = function (board, current, maxLookAhead, maxRandomPredict) {
 	if (current == maxLookAhead )
 		return 0;
 	
@@ -248,30 +243,29 @@ var evaluateMove = function (board, current, maxLookAhead) {
 	var maxDir = null;
 	
 	var possibleBoards;
-	if (current == 1) { //predict possible boards only on the first step
+	if (current <= maxRandomPredict) { //predict possible boards only on the first step
 		possibleBoards = getRandomBoards(board);
 	} else {
 		possibleBoards = [board];
 	}
 	
-	for (var bI in possibleBoards)
-	{
-		var possibleBoard = possibleBoards[bI];
+	for (var i in dirs){
+		var dir = dirs[i];
+		var nextW = 0;
 		
-		for (var i in dirs){
-			var dir = dirs[i];
+		for (var bI in possibleBoards)
+		{
+			var possibleBoard = possibleBoards[bI];			
 			var nextBoard = getNextBoard(possibleBoard, dir);
 			
 			if (areEqual(board, nextBoard))
 				continue;
 				
-			var nextW = evaluateMove(nextBoard, current + 1, maxLookAhead);
-			if (nextW == -1)
-				continue;
-				
-			if (nextW > max)
-				max = nextW;
+			nextW += evaluateMove(nextBoard, current + 1, maxLookAhead, maxRandomPredict);				
 		}
+		
+		if (nextW > max)
+			max = nextW;
 	}
 	
 	if (max == -1)
@@ -280,7 +274,17 @@ var evaluateMove = function (board, current, maxLookAhead) {
 	return max + weight;
 }
 
-var solve = function (size, maxLookAhead) {
+/*
+ * Main entry point
+ * @size - the size of the board (default: 4)
+ * @maxLookAhead - how many steps to look ahead before making a move (default: 5)
+ * @maxRandomPredict - how many steps ahead should take random tile into account (default: 1) - can affect performance
+ */
+var solve = function (size, maxLookAhead, maxRandomPredict) {
+	if (!size) size = 4;
+	if (!maxLookAhead) maxLookAhead = 3;
+	if (!maxRandomPredict) maxRandomPredict = 1;
+
 	setTimeout(function () {
 		var board = scrapeBoard(size);
 		var dirs = ['left','right','up','down'];
@@ -294,7 +298,7 @@ var solve = function (size, maxLookAhead) {
 			if (areEqual(board, nextBoard))
 				continue;
 				
-			var nextW = evaluateMove(nextBoard, 1, maxLookAhead);
+			var nextW = evaluateMove(nextBoard, 1, maxLookAhead, maxRandomPredict);
 			if (nextW == -1)
 				continue;
 				
@@ -323,11 +327,9 @@ var solve = function (size, maxLookAhead) {
 			}
 			
 			document.dispatchEvent(e);
-			solve(size, maxLookAhead);
+			solve(size, maxLookAhead, maxRandomPredict);
 		} else {
 			console.log('no more moves?');
 		}
 	}, 500);
 }
-
-appendScript();
