@@ -208,8 +208,38 @@ var areEqual = function (b1, b2) {
 	return true;
 }
 
+var getRandomBoards = function (board) {
+	var size = board.length,
+		result = [],
+		emptyCoords = [],
+		possibleVals = [2, 4],
+		x, y;
+	
+	for (x = 0; x < size; x++) {
+		for (y = 0; y < size; y++) {
+			if (board[x][y] == 0) emptyCoords.push([x, y]);
+		}
+	}
+	
+	if (!emptyCoords.length)
+		return [];
+	
+	for (var j in possibleVals) {
+		var val = possibleVals[j];
+		
+		for (var i in emptyCoords) {
+			var coords = emptyCoords[i];
+			var newBoard = copyBoard(board);
+			newBoard[coords[0]][coords[1]] = val;
+			result.push(newBoard);
+		}
+	}
+	
+	return result;
+}
+
 var evaluateMove = function (board, current, maxLookAhead) {
-	if (current == maxLookAhead)
+	if (current == maxLookAhead )
 		return 0;
 	
 	var weight = evaluateBoard(board);
@@ -217,23 +247,35 @@ var evaluateMove = function (board, current, maxLookAhead) {
 	var max = -1;
 	var maxDir = null;
 	
-	for (var i in dirs){
-		var dir = dirs[i];
-		var nextBoard = getNextBoard(board, dir);
+	var possibleBoards;
+	if (current == 1) { //predict possible boards only on the first step
+		possibleBoards = getRandomBoards(board);
+	} else {
+		possibleBoards = [board];
+	}
+	
+	for (var bI in possibleBoards)
+	{
+		var possibleBoard = possibleBoards[bI];
 		
-		if (areEqual(board, nextBoard))
-			continue;
+		for (var i in dirs){
+			var dir = dirs[i];
+			var nextBoard = getNextBoard(possibleBoard, dir);
 			
-		var nextW = evaluateMove(nextBoard, current + 1, maxLookAhead);
-		if (nextW == -1)
-			continue;
-			
-		if (nextW > max)
-			max = nextW;
+			if (areEqual(board, nextBoard))
+				continue;
+				
+			var nextW = evaluateMove(nextBoard, current + 1, maxLookAhead);
+			if (nextW == -1)
+				continue;
+				
+			if (nextW > max)
+				max = nextW;
+		}
 	}
 	
 	if (max == -1)
-		return -1;
+		return 0;
 	
 	return max + weight;
 }
@@ -252,18 +294,13 @@ var solve = function (size, maxLookAhead) {
 			if (areEqual(board, nextBoard))
 				continue;
 				
-			// var nextW = evaluateMove(nextBoard, 1, maxLookAhead);
-			// if (nextW == -1)
-				// continue;
+			var nextW = evaluateMove(nextBoard, 1, maxLookAhead);
+			if (nextW == -1)
+				continue;
 				
-			// if (nextW > max)
-			// {
-				// max = nextW;
-				// maxDir = dir;
-			// }
-			var weight = evaluateBoard(nextBoard);
-			if (weight > max && !areEqual(board, nextBoard)){
-				max = weight;
+			if (nextW > max)
+			{
+				max = nextW;
 				maxDir = dir;
 			}
 		}
@@ -286,7 +323,7 @@ var solve = function (size, maxLookAhead) {
 			}
 			
 			document.dispatchEvent(e);
-			solve(size);
+			solve(size, maxLookAhead);
 		} else {
 			console.log('no more moves?');
 		}
