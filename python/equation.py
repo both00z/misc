@@ -18,6 +18,9 @@ def is_operator(token):
 def is_left_associative(operator):
     return operator in ['+', '-', '*', '/', '^', '%']
 
+'''
+Check the precedence of mathematical operators
+'''
 def check_precedence(o1, o2):
     weights = {'^': 2, '*':1, '/':1, '%':1, '+':0, '-':0}
     w1 = weights[o1]
@@ -30,6 +33,9 @@ def check_precedence(o1, o2):
     else:
         return -1
 
+'''
+Process the reverse Polish notation array to get the result
+'''
 def evaluate_eq(arr):
     stack = []
     
@@ -55,6 +61,9 @@ def evaluate_eq(arr):
 
     return stack[0]
 
+'''
+Use shunting yard algorithm to convert string eq into reverse Polish notation represented as an array
+'''
 def parse_eq(eq):    
     out = []
     op = []
@@ -96,6 +105,9 @@ def parse_eq(eq):
 
     return out
 
+'''
+Main method - evaluates a human-readable equation
+'''
 def e(eq):
     arr = parse_eq(eq)
     return evaluate_eq(arr)
