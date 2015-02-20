@@ -26,12 +26,7 @@ def check_precedence(o1, o2):
     w1 = weights[o1]
     w2 = weights[o2]
 
-    if (w1 > w2):
-        return 1
-    elif (w1 == w2):
-        return 0
-    else:
-        return -1
+    return w1 - w2
 
 '''
 Process the reverse Polish notation array to get the result
